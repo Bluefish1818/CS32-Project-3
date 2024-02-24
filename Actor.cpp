@@ -1,68 +1,36 @@
-#include <list>
 #include "Actor.h"
 #include "StudentWorld.h"
-#include "GameConstants.h"
 
-using namespace std;
 
-// VALENTINE OBJECT (FROM SKELETON)
-Valentine::Valentine(StudentWorld* sw, int x, int y)
- : GraphObject(IID_EXTRA_LIFE, x, y), m_world(sw)
-{
-}
+// Students:  Add code to this file, Actor.h, StudentWorld.h, and StudentWorld.cpp
 
-void Valentine::doSomething()
-{
-    int key;
-    if (m_world->getKey(key))
-    {
-        if (key == KEY_PRESS_ENTER)
-        	m_world->playSound(SOUND_GOT_GOODIE);
-    }
-}
-
-void Player::doSomething()
+void Avatar::doSomething()
 {
     int key;
     if (getWorld()->getKey(key))
     {
-        if (key == KEY_PRESS_UP || key == 'w' || key == '8')
+        switch (key)
         {
-            setDirection(up);
-            moveTo(getX(), getY() + 1);
-            
-        }
-        if (key == KEY_PRESS_RIGHT || key == 'd' || key == '6')
-        {
-            setDirection(right);
-            moveTo(getX() + 1, getY());
-
-        }
-        if (key == KEY_PRESS_DOWN || key == 's' || key == '5')
-        {
-            setDirection(down);
-            moveTo(getX(), getY() - 1);
-
-        }
-        if (key == KEY_PRESS_LEFT || key == 'a' || key == '4')
-        {
-            setDirection(left);
-            moveTo(getX() - 1, getY());
-        }
-        if (key == KEY_PRESS_SPACE)
-        {
-            getWorld()->playSound(SOUND_PLAYER_FIRE);
-            
+            case KEY_PRESS_LEFT:
+                setDirection(left);
+                if(getWorld()->canWalk(getX()-1, getY()))
+                    moveTo(getX()-1, getY());
+                break;
+            case KEY_PRESS_RIGHT:
+                setDirection(right);
+                if(getWorld()->canWalk(getX()+1, getY()))
+                    moveTo(getX()+1, getY());
+                break;
+            case KEY_PRESS_UP:
+                setDirection(up);
+                if(getWorld()->canWalk(getX(), getY()+1))
+                    moveTo(getX(), getY()+1);
+                break;
+            case KEY_PRESS_DOWN:
+                setDirection(down);
+                if(getWorld()->canWalk(getX(), getY()-1))
+                    moveTo(getX(), getY()-1);
+                break;
         }
     }
-}
-
-
-
-
-Actor* Actor::getActorAtPoint(int x, int y) const
-{
-    list<Actor*>::iterator it;
-    
-    return nullptr;
 }
