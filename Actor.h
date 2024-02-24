@@ -1,9 +1,15 @@
 #ifndef ACTOR_H_
 #define ACTOR_H_
 
+#include <string>
+#include <list>
+#include <vector>
 
 #include "GraphObject.h"
-#include "StudentWorld.h"
+// #include "StudentWorld.h"
+class StudentWorld;
+
+using namespace std;
 
 class Valentine : public GraphObject
 {
@@ -20,12 +26,12 @@ class Actor : public GraphObject
 {
 public:
     Actor::Actor(StudentWorld* sw, int id, int x, int y)
-        : GraphObject(id, x, y), m_world(sw), m_posX(x), m_posY(y), m_objectID(id)
+        : GraphObject(id, x, y), m_world(sw), m_posX(x), m_posY(y), m_objectID(id), m_alive(true)
     {
         setVisible(true);
         // TESTING!!!!!!!!!!!
     }
-    virtual void doSomething() = 0;
+    virtual void doSomething() {};
 
     virtual ~Actor() {}
 
@@ -34,11 +40,23 @@ public:
     int             getPosX() const { return m_posX; }
     int             getPosY() const { return m_posY; }
     bool            getAlive() const { return m_alive; }
-    Actor*          getActorAtPoint(int x, int y) const;
+
+
+
+    void setPos(int x, int y) { m_posX = x; m_posY = y; }
+    void setAlive(bool AliveState) { m_alive = AliveState; }
+
+
+    virtual bool isPushable() { return false; }
+
+    bool checkAndMove(int dir);
+
+    bool firePea();
 
 
 private:
-    bool m_alive = true;
+    const int action = 5;
+    bool m_alive;
     int m_objectID;
     int m_posX;
     int m_posY;
@@ -46,19 +64,28 @@ private:
 };
 
 
-class Damagable : public Actor
+class Collidable : public Actor
 {
 public:
+    Collidable::Collidable(StudentWorld* sw, int id, int x, int y)
+        : Actor(sw, id, x, y)
+    {
+        setVisible(true);
+        // TESTING!!!!!!!!!!!
+    }
+    bool isPushable() { return true; }
+    virtual void doSomething() {}
 
 private:
-    int m_health;
+
 };
 
-class Player : public Actor
+
+class Player : public Collidable
 {
 public:
     Player::Player(StudentWorld* sw, int id, int x, int y)
-        : Actor(sw,IID_PLAYER,x,y), m_health(20), m_peas(20)
+        : Collidable(sw,IID_PLAYER,x,y), m_health(20), m_peas(20)
     {
         setVisible(true);
         // TESTING!!!!!!!!!!!
@@ -67,28 +94,45 @@ public:
     //virtual void shootPea();
     virtual ~Player() {};
 
-    int getHealth() const { return m_health; }
-    int getPeas()   const { return m_peas; }
+    virtual int getHealth() const { return m_health; }
+    virtual int getPeas()   const { return m_peas; }
 private:
     int m_health;
     int m_peas;
 };
 
-class Robot : public Actor
+
+class Robot : public Collidable
 {
 public:
-    int getValue() const { return m_value; }
+    Robot::Robot(StudentWorld* sw, int id, int x, int y)
+        : Collidable(sw, id, x, y), m_value(0), m_health(0)
+    {
+        setVisible(true);
+        // TESTING!!!!!!!!!!!
+    }
+    virtual void doSomething() {};
+    virtual int getValue() const { return m_value; }
+    virtual bool isRobot() { return true; }
     virtual ~Robot() {};
 private:
     int m_value;
+    int m_health;
 };
 
 // RageBot
 // ThiefBots
 
-class RageBot : public Robot
+class VerticalRageBot : public Robot
 {
 public:
+    VerticalRageBot::VerticalRageBot(StudentWorld* sw, int id, int x, int y)
+        : Robot(sw, IID_RAGEBOT, x, y), dir(right)
+    {
+        setVisible(true);
+        setDirection(dir);
+    }
+    virtual void doSomething() {};
     /*void doSomething()
     {
         If the player is in my line of sight, then
@@ -99,22 +143,84 @@ public:
             Reverse my direction, but don’t move during this tick
     }
     ...*/
+private:
+    int dir;
 };
 
-
-
-class Goodie : public Actor
+class HorizontalRageBot : public Robot
 {
 public:
 
+    void doSomething() {}
+    HorizontalRageBot::HorizontalRageBot(StudentWorld* sw, int id, int x, int y)
+        : Robot(sw, IID_RAGEBOT, x, y), dir(up)
+    {
+        setVisible(true);
+        setDirection(dir);
+    }
+    /*void doSomething()
+    {
+        If the player is in my line of sight, then
+            Fire my pea cannon in the direction of the player
+            Else if I can move in my current direction w / o hitting an obstacle, then
+            Move one square in my current direction
+            Else if I’m about to run into an obstacle, then
+            Reverse my direction, but don’t move during this tick
+    }
+    ...*/
+private:
+    int dir;
+};
+
+class ThiefBot : public Robot
+{
+public:
+    void doSomething() {}
+    ThiefBot::ThiefBot(StudentWorld* sw, int id, int x, int y)
+        : Robot(sw, IID_THIEFBOT, x, y)
+    {
+        setVisible(true);
+    }
 private:
 
 };
 
-class HealthGoodie : public Goodie
+
+class MeanThiefBot : public ThiefBot
 {
 public:
+    virtual void doSomething() {}
+    MeanThiefBot::MeanThiefBot(StudentWorld* sw, int id, int x, int y)
+        : ThiefBot(sw, IID_MEAN_THIEFBOT, x, y)
+    {
+        setVisible(true);
+    }
+private:
 
+};
+
+class Goodie : public Actor
+{
+public:
+    virtual void doSomething() {}
+    Goodie::Goodie(StudentWorld* sw, int id, int x, int y)
+        : Actor(sw, id, x, y)
+    {
+        setVisible(true);
+    }
+    virtual bool isGoodie() { return true; }
+private:
+
+};
+
+class RestoreHealthGoodie : public Goodie
+{
+public:
+    RestoreHealthGoodie::RestoreHealthGoodie(StudentWorld* sw, int id, int x, int y)
+        : Goodie(sw, IID_RESTORE_HEALTH, x, y)
+    {
+        setVisible(true);
+    }
 private:
 
 };
@@ -123,16 +229,141 @@ private:
 class AmmoGoodie : public Goodie
 {
 public:
+    AmmoGoodie::AmmoGoodie(StudentWorld* sw, int id, int x, int y)
+        : Goodie(sw, IID_AMMO, x, y)
+    {
+        setVisible(true);
+    }
+    void doSomething() {}
 
 private:
 
 };
 // AmmoGoodie
 
-class Environment : public Actor
+class ExtraLifeGoodie : public Goodie
 {
 public:
-    Environment::Environment(StudentWorld* sw, int id, int x, int y)
+    ExtraLifeGoodie::ExtraLifeGoodie(StudentWorld* sw, int id, int x, int y)
+        : Goodie(sw, IID_EXTRA_LIFE, x, y)
+    {
+        setVisible(true);
+    }
+    void doSomething() {}
+private:
+
+};
+
+class Pit : public Collidable
+{
+public:
+
+    Pit::Pit(StudentWorld* sw, int id, int x, int y)
+        : Collidable(sw, IID_PIT, x, y)
+    {
+        setVisible(true);
+        // TESTING!!!!!!!!!!!
+    }
+    void doSomething() {}
+};
+
+// Wall
+class Wall : public Collidable
+{
+public:
+    Wall::Wall(StudentWorld* sw, int id, int x, int y)
+        : Collidable(sw, IID_WALL, x, y)
+    {
+        setVisible(true);
+        setDirection(left);
+        // TESTING!!!!!!!!!!!
+    }
+    void doSomething() { firePea(); }
+private:
+
+};
+// Pits
+
+class Marble : public Collidable
+{
+public:
+    Marble::Marble(StudentWorld* sw, int id, int x, int y)
+        : Collidable(sw, IID_MARBLE, x, y)
+
+    {
+        setVisible(true);
+        // TESTING!!!!!!!!!!!
+    }
+    virtual void doSomething() {}
+private:
+
+};
+
+class ThiefBotFactory : public Collidable
+{
+public:
+
+    ThiefBotFactory::ThiefBotFactory(StudentWorld* sw, int id, int x, int y)
+        : Collidable(sw, IID_ROBOT_FACTORY, x, y)
+
+    {
+        setVisible(true);
+        // TESTING!!!!!!!!!!!
+    }
+    virtual void doSomething() {}
+private:
+
+};
+
+//MeanThiefBotFactory
+
+class MeanThiefBotFactory : public ThiefBotFactory
+{
+public:
+    
+    MeanThiefBotFactory::MeanThiefBotFactory(StudentWorld* sw, int id, int x, int y)
+        : ThiefBotFactory(sw, IID_ROBOT_FACTORY, x, y)
+    {
+        setVisible(true);
+        // TESTING!!!!!!!!!!!
+    }
+    virtual void doSomething() {}
+private:
+
+};
+class Exit : public Goodie
+{
+public:
+    Exit::Exit(StudentWorld* sw, int id, int x, int y)
+        : Goodie(sw, IID_EXIT, x, y)
+
+    {
+        setVisible(true);
+        // TESTING!!!!!!!!!!!
+    }
+    virtual void doSomething() {}
+private:
+
+};
+
+class Crystal : public Goodie
+{
+public:
+
+    Crystal::Crystal(StudentWorld* sw, int id, int x, int y)
+        : Goodie(sw, IID_CRYSTAL, x, y)
+
+    {
+        setVisible(true);
+        // TESTING!!!!!!!!!!!
+    }
+    virtual void doSomething() {}
+};
+
+class Projectile : public Actor
+{
+public:
+    Projectile::Projectile(StudentWorld* sw, int id, int x, int y)
         : Actor(sw, id, x, y)
 
     {
@@ -144,44 +375,20 @@ private:
 
 };
 
-// Wall
-class Wall : public Environment
+
+
+class Pea : public Projectile
 {
 public:
-    Wall::Wall(StudentWorld* sw, int id, int x, int y)
-        : Environment(sw, IID_WALL, x, y)
-
+    Pea::Pea(StudentWorld* sw, int id, int dir, int x, int y)
+        : Projectile(sw, IID_PEA, x, y), m_direction(dir)
     {
         setVisible(true);
-        // TESTING!!!!!!!!!!!
+
     }
-    virtual void doSomething() {}
+    virtual void doSomething();
+    int getPeaDir() const { return m_direction; }
 private:
-
-};
-// Pits
-
-class Interactable : public Environment
-{
-public:
-
-private:
-
-};
-
-class Immovable : public Environment
-{
-public:
-
-private:
-
-};
-
-class RobotFactory : public Environment
-{
-public:
-
-private:
-
+    int m_direction;
 };
 #endif // ACTOR_H_
